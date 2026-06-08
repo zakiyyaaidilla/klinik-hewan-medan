@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <title>SIG Klinik Hewan Kota Medan</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --green-dark: #0d4a2f;
+            --green-mid: #1a6b44;
+            --green-light: #27ae60;
+            --green-pale: #e8f5ee;
+            --cream: #faf9f6;
+            --text: #1a1a1a;
+            --text-muted: #666;
+            --border: #e0e0e0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--cream);
+            overflow-x: hidden;
+        }
+
+        /* ========== LANDING PAGE ========== */
+        #landing {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Decorative background blobs */
+        #landing::before {
+            content: '';
+            position: absolute;
+            top: -120px; right: -120px;
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, #c8e6d4 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: 0;
+        }
+        #landing::after {
+            content: '';
+            position: absolute;
+            bottom: -80px; left: -80px;
+            width: 400px; height: 400px;
+            background: radial-gradient(circle, #d4edde 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: 0;
+        }
+
+        /* Floating dots pattern */
+        .dots-bg {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: radial-gradient(circle, #27ae6022 1.5px, transparent 1.5px);
+            background-size: 32px 32px;
+            z-index: 0;
+        }
+
+        /* NAV */
+        .nav {
+            position: relative; z-index: 10;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 24px 60px;
+        }
+        .nav-logo {
+            display: flex; align-items: center; gap: 10px;
+        }
+        .nav-logo-icon {
+            width: 40px; height: 40px;
+            background: var(--green-dark);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+        }
+        .nav-logo-text {
+            font-size: 15px; font-weight: 700; color: var(--green-dark);
+            line-height: 1.2;
+        }
+        .nav-logo-sub {
+            font-size: 11px; font-weight: 400; color: var(--text-muted);
+        }
+        .nav-badge {
+            background: var(--green-dark);
+            color: white;
+            font-size: 12px; font-weight: 600;
+            padding: 6px 16px;
+            border-radius: 20px;
+        }
+
+        /* HERO */
+        .hero {
+            position: relative; z-index: 5;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            padding: 0 60px;
+            gap: 60px;
+        }
+
+        .hero-left { flex: 1; max-width: 580px; }
+
+        .hero-tag {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: var(--green-pale);
+            border: 1px solid #a8d5bb;
+            border-radius: 20px;
+            padding: 6px 16px;
+            font-size: 12px; font-weight: 600; color: var(--green-dark);
+            margin-bottom: 28px;
+            letter-spacing: 0.5px;
+        }
+        .hero-tag-dot {
+            width: 7px; height: 7px;
+            background: var(--green-light);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.3); }
+        }
+
+        .hero-title {
+            font-family: 'Instrument Serif', serif;
+            font-size: 58px;
+            line-height: 1.1;
+            color: var(--text);
+            margin-bottom: 20px;
+        }
+        .hero-title .accent {
+            color: var(--green-mid);
+            font-style: italic;
+        }
+
+        .hero-desc {
+            font-size: 17px;
+            line-height: 1.7;
+            color: var(--text-muted);
+            margin-bottom: 40px;
+            max-width: 460px;
+        }
+
+        .hero-actions {
+            display: flex; align-items: center; gap: 16px;
+        }
+
+        .btn-primary {
+            display: inline-flex; align-items: center; gap: 10px;
+            background: var(--green-dark);
+            color: white;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 15px; font-weight: 600;
+            padding: 16px 32px;
+            border-radius: 50px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.25s;
+            text-decoration: none;
+        }
+        .btn-primary:hover {
+            background: var(--green-mid);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(13,74,47,0.3);
+        }
+        .btn-primary svg { transition: transform 0.2s; }
+        .btn-primary:hover svg { transform: translateX(4px); }
+
+        .btn-secondary {
+            font-size: 14px; font-weight: 600;
+            color: var(--green-dark);
+            cursor: pointer;
+            background: none; border: none;
+            display: flex; align-items: center; gap: 6px;
+            text-decoration: underline; text-underline-offset: 3px;
+        }
+
+        /* Stats row */
+        .hero-stats {
+            display: flex; gap: 32px; margin-top: 48px;
+        }
+        .stat {
+            display: flex; flex-direction: column; gap: 2px;
+        }
+        .stat-num {
+            font-size: 26px; font-weight: 800; color: var(--green-dark);
+            line-height: 1;
+        }
+        .stat-label {
+            font-size: 12px; color: var(--text-muted); font-weight: 500;
+        }
+        .stat-divider {
+            width: 1px; background: var(--border);
+            align-self: stretch; margin: 4px 0;
+        }
+
+        /* Hero right: floating cards */
+        .hero-right {
+            flex: 0 0 340px;
+            position: relative;
+            height: 420px;
+        }
+        .float-card {
+            position: absolute;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+            padding: 16px 20px;
+            animation: float 4s ease-in-out infinite;
+        }
+        .float-card:nth-child(2) { animation-delay: -2s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .card-main {
+            top: 40px; left: 0; right: 0;
+            width: 300px;
+        }
+        .card-map-preview {
+            background: #e8f5ee;
+            border-radius: 10px;
+            height: 120px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 40px;
+            margin-bottom: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+        .map-pin {
+            position: absolute;
+            font-size: 28px;
+            animation: bounce 1.5s ease-in-out infinite;
+        }
+        .map-pin:nth-child(1) { top: 20px; left: 40px; animation-delay: 0s; }
+        .map-pin:nth-child(2) { top: 30px; right: 50px; animation-delay: 0.5s; }
+        .map-pin:nth-child(3) { bottom: 20px; left: 120px; animation-delay: 1s; }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+
+        .card-main-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+        .card-main-sub { font-size: 12px; color: var(--text-muted); }
+        .card-tag-row { display: flex; gap: 6px; margin-top: 10px; }
+        .card-tag {
+            font-size: 11px; font-weight: 600;
+            padding: 4px 10px; border-radius: 10px;
+        }
+        .tag-green { background: #d4edda; color: #155724; }
+        .tag-blue { background: #d1ecf1; color: #0c5460; }
+        .tag-orange { background: #fff3cd; color: #856404; }
+
+        .card-small {
+            background: var(--green-dark);
+            color: white;
+            top: 200px; right: -20px;
+            width: 180px;
+            padding: 14px 16px;
+        }
+        .card-small-label { font-size: 11px; opacity: 0.7; margin-bottom: 4px; }
+        .card-small-val { font-size: 22px; font-weight: 800; }
+        .card-small-sub { font-size: 11px; opacity: 0.8; margin-top: 2px; }
+
+        .card-rating {
+            bottom: 20px; left: 10px;
+            width: 160px;
+            padding: 12px 16px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .rating-icon { font-size: 28px; }
+        .rating-num { font-size: 20px; font-weight: 800; color: var(--text); }
+        .rating-label { font-size: 11px; color: var(--text-muted); }
+
+        /* Scrolling feature bar */
+        .feature-bar {
+            position: relative; z-index: 5;
+            background: var(--green-dark);
+            color: white;
+            padding: 14px 60px;
+            display: flex; gap: 40px; align-items: center;
+            overflow: hidden;
+        }
+        .feature-item {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 13px; font-weight: 500;
+            white-space: nowrap; flex-shrink: 0;
+        }
+        .feature-dot { font-size: 16px; }
+
+        /* ========== MAP PAGE ========== */
+        #mappage {
+            display: none;
+            height: 100vh;
+            flex-direction: column;
+        }
+        #mappage.active {
+            display: flex;
+        }
+
+        .map-header {
+            background: var(--green-dark);
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        .map-header-left { display: flex; align-items: center; gap: 12px; }
+        .map-header-logo {
+            width: 36px; height: 36px;
+            background: var(--green-mid);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+        }
+        .map-header-title h1 { font-size: 15px; font-weight: 700; }
+        .map-header-title p { font-size: 11px; opacity: 0.7; }
+        .map-header-right { display: flex; gap: 10px; }
+        .btn-map-header {
+            padding: 7px 14px; border-radius: 6px;
+            font-size: 13px; font-weight: 600;
+            cursor: pointer; border: none;
+            display: flex; align-items: center; gap: 6px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .btn-back-home {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3) !important;
+        }
+        .btn-back-home:hover { background: rgba(255,255,255,0.25); }
+        .btn-refresh-map { background: var(--green-mid); color: white; }
+        .btn-tambah-map { background: white; color: var(--green-dark); }
+
+        .map-main { display: flex; flex: 1; overflow: hidden; }
+        .sidebar {
+            width: 340px; background: white;
+            display: flex; flex-direction: column;
+            overflow-y: auto; flex-shrink: 0;
+            border-right: 1px solid var(--border);
+        }
+        .sidebar-section { padding: 14px 16px; border-bottom: 1px solid #f0f0f0; }
+
+        .lokasi-label {
+            font-size: 11px; font-weight: 700; color: var(--green-light);
+            text-transform: uppercase; letter-spacing: 0.5px;
+            margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+        }
+        .lokasi-inputs { display: flex; gap: 8px; margin-bottom: 8px; }
+        .lokasi-inputs input {
+            flex: 1; padding: 8px 10px;
+            border: 1px solid var(--border); border-radius: 6px;
+            font-size: 13px; color: var(--text);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .lokasi-inputs input:focus { outline: none; border-color: var(--green-light); }
+        .btn-gps {
+            background: none; border: none; color: var(--green-light);
+            font-size: 12px; cursor: pointer; font-weight: 600;
+            display: flex; align-items: center; gap: 4px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .search-wrapper { position: relative; }
+        .search-wrapper input {
+            width: 100%; padding: 9px 12px 9px 36px;
+            border: 1px solid var(--border); border-radius: 8px;
+            font-size: 13px; color: var(--text);
+            background: #f8f9fa;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .search-wrapper input:focus { outline: none; border-color: var(--green-light); background: white; }
+        .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 15px; }
+
+        .stats-row { display: flex; gap: 8px; }
+        .stat-card {
+            flex: 1; background: #f8f9fa; border-radius: 8px;
+            padding: 10px 8px; text-align: center;
+        }
+        .stat-value { font-size: 20px; font-weight: 800; color: var(--green-dark); line-height: 1; }
+        .stat-label-sm { font-size: 10px; color: #888; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.3px; }
+
+        .filter-row { display: flex; gap: 6px; }
+        .btn-filter {
+            flex: 1; padding: 8px 6px; border-radius: 6px;
+            font-size: 12px; font-weight: 600; cursor: pointer;
+            border: 1px solid var(--border); background: white; color: #555;
+            display: flex; align-items: center; justify-content: center; gap: 4px;
+            transition: all 0.15s;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .btn-filter.active { background: var(--green-dark); color: white; border-color: var(--green-dark); }
+        .btn-filter:not(.active):hover { border-color: var(--green-dark); color: var(--green-dark); }
+
+        .klinik-list { flex: 1; }
+        .klinik-item {
+            padding: 12px 16px; border-bottom: 1px solid #f5f5f5;
+            cursor: pointer; transition: background 0.1s;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .klinik-item:hover { background: #f8fffe; }
+        .klinik-item.active { background: #f0faf5; border-left: 3px solid var(--green-dark); }
+        .klinik-name { font-size: 13px; font-weight: 600; color: var(--text); }
+        .klinik-meta { font-size: 11px; color: #888; margin-top: 2px; }
+        .klinik-item-left { flex: 1; }
+        .badge-terdekat {
+            background: #fff3cd; color: #856404;
+            font-size: 10px; font-weight: 700;
+            padding: 2px 8px; border-radius: 10px;
+            display: flex; align-items: center; gap: 3px;
+            white-space: nowrap;
+        }
+        .badge-jarak {
+            background: #e8f5e9; color: #2e7d32;
+            font-size: 10px; font-weight: 700;
+            padding: 2px 8px; border-radius: 10px;
+            white-space: nowrap; margin-top: 4px; display: inline-block;
+        }
+
+        #map { flex: 1; }
+
+        .legend {
+            background: white; border-radius: 6px; padding: 10px 12px;
+            font-size: 12px; line-height: 1.8;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+        }
+        .legend-title { font-weight: 700; font-size: 12px; margin-bottom: 4px; color: var(--text); }
+        .legend-item { display: flex; align-items: center; gap: 8px; color: #444; }
+        .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+
+        /* MODAL DETAIL */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 9999;
+            justify-content: center; align-items: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: white; border-radius: 16px; width: 420px;
+            max-width: 90vw; overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .modal-header {
+            background: var(--green-dark); color: white; padding: 20px;
+            display: flex; justify-content: space-between; align-items: flex-start;
+        }
+        .modal-header h2 { font-size: 16px; font-weight: 700; line-height: 1.3; }
+        .modal-header p { font-size: 12px; opacity: 0.8; margin-top: 4px; }
+        .modal-close {
+            background: none; border: none; color: white;
+            font-size: 22px; cursor: pointer; line-height: 1; opacity: 0.8;
+        }
+        .modal-close:hover { opacity: 1; }
+        .modal-body { padding: 20px; }
+        .detail-row {
+            display: flex; align-items: flex-start; gap: 12px;
+            padding: 10px 0; border-bottom: 1px solid #f5f5f5;
+        }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-icon { font-size: 18px; width: 24px; text-align: center; flex-shrink: 0; }
+        .detail-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 2px; }
+        .detail-value { font-size: 14px; color: var(--text); font-weight: 600; }
+        .badge-status { padding: 3px 10px; border-radius: 10px; font-size: 12px; font-weight: 600; }
+        .badge-buka { background: #d4edda; color: #155724; }
+        .badge-tutup { background: #f8d7da; color: #721c24; }
+        .badge-harga { padding: 3px 10px; border-radius: 10px; font-size: 12px; font-weight: 600; }
+        .badge-murah { background: #d4edda; color: #155724; }
+        .badge-sedang { background: #fff3cd; color: #856404; }
+        .badge-tinggi { background: #f8d7da; color: #721c24; }
+
+        /* MODAL TAMBAH */
+        .modal-tambah {
+            background: white; border-radius: 16px; width: 480px;
+            max-width: 90vw; max-height: 90vh; overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .form-group { margin-bottom: 14px; }
+        .form-group label {
+            display: block; font-size: 12px; font-weight: 700; color: #555;
+            margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.4px;
+        }
+        .form-group input, .form-group select {
+            width: 100%; padding: 9px 12px;
+            border: 1px solid var(--border); border-radius: 8px;
+            font-size: 13px; color: var(--text);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--green-light); }
+        .form-row { display: flex; gap: 12px; }
+        .form-row .form-group { flex: 1; }
+        .btn-submit {
+            width: 100%; padding: 12px; background: var(--green-dark);
+            color: white; border: none; border-radius: 8px;
+            font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 4px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .btn-submit:hover { background: var(--green-mid); }
+
+        .toast {
+            position: fixed; bottom: 24px; right: 24px;
+            background: var(--green-dark); color: white;
+            padding: 12px 20px; border-radius: 10px;
+            font-size: 14px; z-index: 99999;
+            transform: translateY(100px); opacity: 0; transition: all 0.3s;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+
+        /* Page transition */
+        .page-transition {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--green-dark); z-index: 9998;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        .page-transition.active { opacity: 1; pointer-events: all; }
+        .transition-text {
+            color: white; font-size: 18px; font-weight: 700;
+            display: flex; align-items: center; gap: 12px;
+        }
+        .spinner {
+            width: 24px; height: 24px; border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white; border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<!-- PAGE TRANSITION -->
+<div class="page-transition" id="pageTransition">
+    <div class="transition-text">
+        <div class="spinner"></div>
+        Memuat peta...
+    </div>
+</div>
+
+<!-- ========== LANDING PAGE ========== -->
+<div id="landing">
+    <div class="dots-bg"></div>
+
+    <nav class="nav">
+        <div class="nav-logo">
+            <div class="nav-logo-icon">🐾</div>
+            <div>
+                <div class="nav-logo-text">SIG Klinik Hewan</div>
+                <div class="nav-logo-sub">Kota Medan</div>
+            </div>
+        </div>
+        <div class="nav-badge">Sistem Informasi Geografis</div>
+    </nav>
+
+    <div class="hero">
+        <div class="hero-left">
+            <div class="hero-tag">
+                <div class="hero-tag-dot"></div>
+                Peta Interaktif Kota Medan
+            </div>
+
+            <h1 class="hero-title">
+                Temukan <span class="accent">Klinik Hewan</span><br>
+                Terdekat di Medan
+            </h1>
+
+            <p class="hero-desc">
+                Sistem pemetaan interaktif yang membantu Anda menemukan klinik hewan terpercaya di Kota Medan. Cari berdasarkan lokasi, rating, dan harga layanan.
+            </p>
+
+            <div class="hero-actions">
+                <button class="btn-primary" onclick="bukaPeta()">
+                    Mulai Mencari
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
+                </button>
+                <button class="btn-secondary" onclick="bukaPeta()">
+                    Lihat Peta →
+                </button>
+            </div>
+
+            <div class="hero-stats">
+                <div class="stat">
+                    <div class="stat-num">12+</div>
+                    <div class="stat-label">Klinik Tersedia</div>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat">
+                    <div class="stat-num">4.5</div>
+                    <div class="stat-label">Rata-rata Rating</div>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat">
+                    <div class="stat-num">21</div>
+                    <div class="stat-label">Kecamatan</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="hero-right">
+            <div class="float-card card-main">
+                <div class="card-map-preview">
+                    <div class="map-pin" style="top:20px;left:40px">📍</div>
+                    <div class="map-pin" style="top:30px;right:50px;animation-delay:0.5s">📍</div>
+                    <div class="map-pin" style="bottom:20px;left:120px;animation-delay:1s">📍</div>
+                </div>
+                <div class="card-main-title">Peta Persebaran Klinik</div>
+                <div class="card-main-sub">Lokasi real-time di seluruh Medan</div>
+                <div class="card-tag-row">
+                    <span class="card-tag tag-green">Rating Tinggi</span>
+                    <span class="card-tag tag-blue">Terdekat</span>
+                    <span class="card-tag tag-orange">Harga Murah</span>
+                </div>
+            </div>
+
+            <div class="float-card card-small">
+                <div class="card-small-label">Klinik Terverifikasi</div>
+                <div class="card-small-val">12</div>
+                <div class="card-small-sub">Di Kota Medan</div>
+            </div>
+
+            <div class="float-card card-rating">
+                <div class="rating-icon">⭐</div>
+                <div>
+                    <div class="rating-num">4.5</div>
+                    <div class="rating-label">Avg Rating</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="feature-bar">
+        <div class="feature-item"><span class="feature-dot">📍</span> Deteksi Lokasi GPS</div>
+        <div class="feature-item"><span class="feature-dot">🔍</span> Pencarian Cepat</div>
+        <div class="feature-item"><span class="feature-dot">⭐</span> Filter Rating</div>
+        <div class="feature-item"><span class="feature-dot">💰</span> Filter Harga</div>
+        <div class="feature-item"><span class="feature-dot">🗺️</span> Peta Interaktif OpenStreetMap</div>
+        <div class="feature-item"><span class="feature-dot">📞</span> Info Kontak Lengkap</div>
+    </div>
+</div>
+
+<!-- ========== MAP PAGE ========== -->
+<div id="mappage">
+    <div class="map-header">
+        <div class="map-header-left">
+            <div class="map-header-logo">🐾</div>
+            <div class="map-header-title">
+                <h1>SIG Klinik Hewan Kota Medan</h1>
+                <p>Sistem Informasi Geografis · Pemetaan Klinik Hewan</p>
+            </div>
+        </div>
+        <div class="map-header-right">
+            <button class="btn-map-header btn-back-home" onclick="kembaliHome()">← Beranda</button>
+            <button class="btn-map-header btn-refresh-map" onclick="location.reload()">⟳ Refresh</button>
+            <button class="btn-map-header btn-tambah-map" onclick="bukaModalTambah()">+ Tambah Klinik</button>
+        </div>
+    </div>
+
+    <div class="map-main">
+        <div class="sidebar">
+            <div class="sidebar-section">
+                <div class="lokasi-label">📍 Titik Lokasi Saya</div>
+                <div class="lokasi-inputs">
+                    <input type="text" id="lat" value="3.5821" placeholder="Latitude">
+                    <input type="text" id="lng" value="98.6734" placeholder="Longitude">
+                </div>
+                <button class="btn-gps" onclick="gunakanGPS()">⊕ Gunakan GPS saya</button>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="search-wrapper">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="search" placeholder="Cari nama klinik atau kecamatan..." oninput="filterList()">
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="stats-row">
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-total">-</div>
+                        <div class="stat-label-sm">Total Klinik</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-rating">-</div>
+                        <div class="stat-label-sm">Rata² Rating</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-mudah">-</div>
+                        <div class="stat-label-sm">Akses Mudah</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="filter-row">
+                    <button class="btn-filter" id="btn-rating" onclick="sortBy('rating')">⭐ Rating</button>
+                    <button class="btn-filter" id="btn-nama" onclick="sortBy('nama')">🔤 Nama</button>
+                    <button class="btn-filter active" id="btn-terdekat" onclick="cariTerdekat()">📍 Terdekat</button>
+                </div>
+            </div>
+
+            <div class="klinik-list" id="klinik-list"></div>
+        </div>
+
+        <div id="map"></div>
+    </div>
+</div>
+
+<!-- MODAL DETAIL KLINIK -->
+<div class="modal-overlay" id="modalDetail">
+    <div class="modal">
+        <div class="modal-header">
+            <div>
+                <h2 id="detail-nama">-</h2>
+                <p id="detail-alamat">-</p>
+            </div>
+            <button class="modal-close" onclick="tutupModal('modalDetail')">×</button>
+        </div>
+        <div class="modal-body">
+            <div class="detail-row">
+                <div class="detail-icon">⭐</div>
+                <div>
+                    <div class="detail-label">Rating</div>
+                    <div class="detail-value"><span id="detail-rating-val">-</span> / 5.0</div>
+                </div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-icon">🕐</div>
+                <div>
+                    <div class="detail-label">Jam Operasional</div>
+                    <div class="detail-value" id="detail-jam">-</div>
+                </div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-icon">📞</div>
+                <div>
+                    <div class="detail-label">No. Telepon</div>
+                    <div class="detail-value" id="detail-telp">-</div>
+                </div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-icon">💰</div>
+                <div>
+                    <div class="detail-label">Harga</div>
+                    <div class="detail-value" id="detail-harga">-</div>
+                </div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-icon">🟢</div>
+                <div>
+                    <div class="detail-label">Status</div>
+                    <div class="detail-value" id="detail-status">-</div>
+                </div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-icon">📍</div>
+                <div>
+                    <div class="detail-label">Koordinat</div>
+                    <div class="detail-value" id="detail-koordinat">-</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL TAMBAH KLINIK -->
+<div class="modal-overlay" id="modalTambah">
+    <div class="modal-tambah">
+        <div class="modal-header">
+            <div>
+                <h2>+ Tambah Klinik Baru</h2>
+                <p>Isi data klinik hewan yang ingin ditambahkan</p>
+            </div>
+            <button class="modal-close" onclick="tutupModal('modalTambah')">×</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Nama Klinik</label>
+                <input type="text" id="form-nama" placeholder="Contoh: Klinik Hewan Sejahtera">
+            </div>
+            <div class="form-group">
+                <label>Alamat</label>
+                <input type="text" id="form-alamat" placeholder="Contoh: Jl. Sudirman No. 10">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Latitude</label>
+                    <input type="number" id="form-lat" placeholder="3.5952" step="0.0001">
+                </div>
+                <div class="form-group">
+                    <label>Longitude</label>
+                    <input type="number" id="form-lng" placeholder="98.6722" step="0.0001">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Rating (0-5)</label>
+                    <input type="number" id="form-rating" placeholder="4.5" min="0" max="5" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>Harga</label>
+                    <select id="form-harga">
+                        <option value="Murah">Murah</option>
+                        <option value="Sedang">Sedang</option>
+                        <option value="Tinggi">Tinggi</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Jam Operasional</label>
+                    <input type="text" id="form-jam" placeholder="08:00-22:00">
+                </div>
+                <div class="form-group">
+                    <label>No. Telepon</label>
+                    <input type="text" id="form-telp" placeholder="0812xxxxxxxx">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Status</label>
+                <select id="form-status">
+                    <option value="Buka">Buka</option>
+                    <option value="Tutup">Tutup</option>
+                </select>
+            </div>
+            <button class="btn-submit" onclick="tambahKlinik()">💾 Simpan Klinik</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+let map, dataGlobal = [], userMarker = null, markers = [], activeSort = 'terdekat';
+let mapInited = false;
+
+function bukaPeta() {
+    const tr = document.getElementById('pageTransition');
+    tr.classList.add('active');
+    setTimeout(() => {
+        document.getElementById('landing').style.display = 'none';
+        document.getElementById('mappage').classList.add('active');
+        tr.classList.remove('active');
+        if (!mapInited) { initMap(); mapInited = true; }
+    }, 700);
+}
+
+function kembaliHome() {
+    document.getElementById('landing').style.display = 'flex';
+    document.getElementById('mappage').classList.remove('active');
+}
+
+function initMap() {
+    map = L.map('map').setView([3.5952, 98.6722], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    const legend = L.control({ position: 'bottomleft' });
+    legend.onAdd = function() {
+        const div = L.DomUtil.create('div', 'legend');
+        div.innerHTML = `
+            <div class="legend-title">LEGENDA</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#27ae60"></div> Rating ≥ 4.0</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#f39c12"></div> Rating 3.0–3.9</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#e74c3c"></div> Rating &lt; 3.0</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#3498db"></div> Lokasi Saya</div>
+        `;
+        return div;
+    };
+    legend.addTo(map);
+
+    fetch('data.php')
+        .then(res => res.json())
+        .then(data => {
+            dataGlobal = data;
+            tampilkanMarker(data);
+            updateStats(data);
+            cariTerdekat();
+        })
+        .catch(() => {
+            dataGlobal = [
+                { id:1, nama:'Klinik Hewan Medan Pet Care', latitude:3.5952, longitude:98.6722, rating:4.5, alamat:'Jl. Gatot Subroto', jam_operasional:'08:00-22:00', no_tlp:'081234567890', harga:'Sedang', status:'Buka' },
+                { id:2, nama:'Sahabat Satwa', latitude:3.5870, longitude:98.6800, rating:4.1, alamat:'Jl. Asia', jam_operasional:'09:00-21:00', no_tlp:'081234567891', harga:'Murah', status:'Buka' },
+                { id:3, nama:'Happy Vet', latitude:3.5780, longitude:98.6540, rating:4.7, alamat:'Jl. Setia Budi', jam_operasional:'09:00-22:00', no_tlp:'081234567892', harga:'Tinggi', status:'Buka' },
+                { id:4, nama:'Animal Care', latitude:3.5810, longitude:98.7002, rating:4.2, alamat:'Jl. Asia', jam_operasional:'09:00-21:00', no_tlp:'081234567893', harga:'Murah', status:'Buka' },
+                { id:5, nama:'Vet Medika', latitude:3.6003, longitude:98.7104, rating:4.6, alamat:'Jl. Krakatau', jam_operasional:'08:00-22:00', no_tlp:'081234567894', harga:'Tinggi', status:'Buka' },
+            ];
+            tampilkanMarker(dataGlobal);
+            updateStats(dataGlobal);
+            cariTerdekat();
+        });
+}
+
+function getColor(rating) {
+    const r = parseFloat(rating);
+    if (r >= 4.0) return '#27ae60';
+    if (r >= 3.0) return '#f39c12';
+    return '#e74c3c';
+}
+
+function createIcon(color) {
+    return L.divIcon({
+        className: '',
+        html: `<svg width="28" height="36" viewBox="0 0 28 36" xmlns="http://www.w3.org/2000/svg">
+            <path d="M14 0C6.27 0 0 6.27 0 14c0 9.33 14 22 14 22S28 23.33 28 14C28 6.27 21.73 0 14 0z" fill="${color}"/>
+            <circle cx="14" cy="14" r="6" fill="white"/>
+        </svg>`,
+        iconSize: [28, 36], iconAnchor: [14, 36], popupAnchor: [0, -36]
+    });
+}
+
+function hitungJarak(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+}
+
+function tampilkanMarker(data) {
+    markers.forEach(m => map.removeLayer(m));
+    markers = [];
+    data.forEach(d => {
+        const color = getColor(d.rating);
+        const m = L.marker([parseFloat(d.latitude), parseFloat(d.longitude)], { icon: createIcon(color) }).addTo(map);
+        m.bindPopup(`<b style="font-size:13px">${d.nama}</b><br><span style="color:#f39c12">⭐</span> ${d.rating}<br><small style="color:#666">${d.alamat || ''}</small><br><a href="#" onclick="bukaDetail(${d.id || JSON.stringify(d.nama)})" style="color:#0d4a2f;font-size:12px;font-weight:700;">Lihat Detail →</a>`);
+        m.on('click', () => highlightItem(d.id || d.nama));
+        markers.push(m);
+        d._marker = m;
+    });
+}
+
+function bukaDetail(idOrNama) {
+    const d = dataGlobal.find(k => k.id == idOrNama || k.nama == idOrNama);
+    if (!d) return;
+    document.getElementById('detail-nama').textContent = d.nama;
+    document.getElementById('detail-alamat').textContent = d.alamat || '-';
+    document.getElementById('detail-rating-val').textContent = d.rating;
+    document.getElementById('detail-jam').textContent = d.jam_operasional || '-';
+    document.getElementById('detail-telp').textContent = d.no_tlp || '-';
+    document.getElementById('detail-koordinat').textContent = `${parseFloat(d.latitude).toFixed(6)}, ${parseFloat(d.longitude).toFixed(6)}`;
+    const harga = d.harga || '-';
+    const hargaClass = harga === 'Murah' ? 'badge-murah' : harga === 'Tinggi' ? 'badge-tinggi' : 'badge-sedang';
+    document.getElementById('detail-harga').innerHTML = `<span class="badge-harga ${hargaClass}">${harga}</span>`;
+    const status = d.status || 'Buka';
+    document.getElementById('detail-status').innerHTML = `<span class="badge-status ${status === 'Buka' ? 'badge-buka' : 'badge-tutup'}">${status}</span>`;
+    document.getElementById('modalDetail').classList.add('show');
+}
+
+function tutupModal(id) { document.getElementById(id).classList.remove('show'); }
+function bukaModalTambah() { document.getElementById('modalTambah').classList.add('show'); }
+
+function tambahKlinik() {
+    const nama = document.getElementById('form-nama').value.trim();
+    const alamat = document.getElementById('form-alamat').value.trim();
+    const lat = parseFloat(document.getElementById('form-lat').value);
+    const lng = parseFloat(document.getElementById('form-lng').value);
+    const rating = parseFloat(document.getElementById('form-rating').value);
+    const harga = document.getElementById('form-harga').value;
+    const jam = document.getElementById('form-jam').value.trim();
+    const telp = document.getElementById('form-telp').value.trim();
+    const status = document.getElementById('form-status').value;
+    if (!nama || isNaN(lat) || isNaN(lng) || isNaN(rating)) { tampilkanToast('⚠️ Nama, koordinat, dan rating wajib diisi!'); return; }
+    const klinikBaru = { id: Date.now(), nama, alamat, latitude: lat, longitude: lng, rating, harga, jam_operasional: jam, no_tlp: telp, status };
+    dataGlobal.push(klinikBaru);
+    tampilkanMarker(dataGlobal);
+    updateStats(dataGlobal);
+    cariTerdekat();
+    ['form-nama','form-alamat','form-lat','form-lng','form-rating','form-jam','form-telp'].forEach(id => document.getElementById(id).value = '');
+    tutupModal('modalTambah');
+    tampilkanToast('✅ Klinik berhasil ditambahkan!');
+}
+
+function tampilkanToast(pesan) {
+    const t = document.getElementById('toast');
+    t.textContent = pesan;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function renderList(data) {
+    const userLat = parseFloat(document.getElementById('lat').value);
+    const userLng = parseFloat(document.getElementById('lng').value);
+    let terdekatId = null, minJarak = 9999;
+    if (!isNaN(userLat) && !isNaN(userLng)) {
+        data.forEach(d => {
+            const j = hitungJarak(userLat, userLng, parseFloat(d.latitude), parseFloat(d.longitude));
+            d._jarak = j;
+            if (j < minJarak) { minJarak = j; terdekatId = d.id || d.nama; }
+        });
+    }
+    const list = document.getElementById('klinik-list');
+    list.innerHTML = '';
+    data.forEach(d => {
+        const isTerdekat = (d.id || d.nama) === terdekatId;
+        const div = document.createElement('div');
+        div.className = 'klinik-item' + (isTerdekat ? ' active' : '');
+        const jarakText = d._jarak !== undefined ? `<span class="badge-jarak">${d._jarak.toFixed(1)} km</span>` : '';
+        div.innerHTML = `
+            <div class="klinik-item-left">
+                <div class="klinik-name">${d.nama}</div>
+                <div class="klinik-meta">⭐ ${d.rating} · ${d.harga || '-'} ${jarakText}</div>
+            </div>
+            ${isTerdekat ? `<span class="badge-terdekat">⭐ TERDEKAT</span>` : ''}
+        `;
+        div.onclick = () => {
+            if (d._marker) { map.setView([parseFloat(d.latitude), parseFloat(d.longitude)], 16); d._marker.openPopup(); document.querySelectorAll('.klinik-item').forEach(el => el.classList.remove('active')); div.classList.add('active'); }
+            bukaDetail(d.id || d.nama);
+        };
+        list.appendChild(div);
+    });
+}
+
+function updateStats(data) {
+    document.getElementById('stat-total').textContent = data.length;
+    const avg = data.reduce((s, d) => s + parseFloat(d.rating || 0), 0) / (data.length || 1);
+    document.getElementById('stat-rating').textContent = avg.toFixed(1);
+    document.getElementById('stat-mudah').textContent = data.filter(d => parseFloat(d.rating) >= 4.0).length;
+}
+
+function sortBy(type) {
+    activeSort = type;
+    document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
+    document.getElementById('btn-' + type).classList.add('active');
+    let sorted = [...dataGlobal];
+    const q = document.getElementById('search').value.toLowerCase();
+    if (q) sorted = sorted.filter(d => d.nama.toLowerCase().includes(q) || (d.kecamatan || '').toLowerCase().includes(q));
+    if (type === 'rating') sorted.sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating));
+    else if (type === 'nama') sorted.sort((a, b) => a.nama.localeCompare(b.nama));
+    else { cariTerdekat(); return; }
+    renderList(sorted);
+}
+
+function filterList() { sortBy(activeSort); }
+
+function cariTerdekat() {
+    activeSort = 'terdekat';
+    document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
+    document.getElementById('btn-terdekat').classList.add('active');
+    const userLat = parseFloat(document.getElementById('lat').value);
+    const userLng = parseFloat(document.getElementById('lng').value);
+    if (isNaN(userLat) || isNaN(userLng)) return;
+    if (userMarker) map.removeLayer(userMarker);
+    userMarker = L.marker([userLat, userLng], { icon: L.divIcon({ className: '', html: `<div style="width:18px;height:18px;background:#3498db;border:3px solid white;border-radius:50%;box-shadow:0 0 6px rgba(52,152,219,0.8)"></div>`, iconSize: [18,18], iconAnchor: [9,9] }) }).addTo(map).bindPopup('Lokasi Saya');
+    map.setView([userLat, userLng], 14);
+    const q = document.getElementById('search').value.toLowerCase();
+    let sorted = [...dataGlobal];
+    if (q) sorted = sorted.filter(d => d.nama.toLowerCase().includes(q) || (d.kecamatan || '').toLowerCase().includes(q));
+    sorted.forEach(d => { d._jarak = hitungJarak(userLat, userLng, parseFloat(d.latitude), parseFloat(d.longitude)); });
+    sorted.sort((a, b) => a._jarak - b._jarak);
+    renderList(sorted);
+}
+
+function gunakanGPS() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos => {
+            document.getElementById('lat').value = pos.coords.latitude.toFixed(6);
+            document.getElementById('lng').value = pos.coords.longitude.toFixed(6);
+            cariTerdekat();
+        });
+    } else { alert('GPS tidak tersedia di browser ini.'); }
+}
+
+function highlightItem(id) {
+    document.querySelectorAll('.klinik-item').forEach((el, i) => {
+        if (dataGlobal[i] && (dataGlobal[i].id || dataGlobal[i].nama) === id) {
+            el.classList.add('active');
+            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    });
+}
+
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('show'); });
+});
+</script>
+</body>
+</html>
